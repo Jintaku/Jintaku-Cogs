@@ -31,12 +31,14 @@ class booru:
            yan = self.fetch_yan(ctx, tags)
            gel = self.fetch_gel(ctx, tags)
            kon = self.fetch_kon(ctx, tags)
+           dan = self.fetch_dan(ctx, tags)
            await yan
            await gel
            await kon
+           await dan
 
            # Fuse multiple image board data
-           data = self.yan_data + self.gel_data + self.kon_data
+           data = self.yan_data + self.gel_data + self.kon_data + self.dan_data
 
            await self.booru_rating(ctx, data)
 
@@ -63,6 +65,10 @@ class booru:
         urlstr = "https://konachan.com/post.json?limit=100&tags=" + "+".join(tags)
         self.kon_data = await self.fetch_from_booru(urlstr, "Konachan")
 
+    async def fetch_dan(self, ctx, tags): # Danbooru fetcher
+        urlstr = "https://danbooru.donmai.us/posts.json?limit=100&tags=" + "+".join(tags)
+        self.dan_data = await self.fetch_from_booru(urlstr, "Danbooru")
+
     async def booru_rating(self, ctx, data): # Filters results based on rating input
            if self.rating in ("e", "s", "q"):
               filtered = [item for item in data if item['rating'] == self.rating]
@@ -84,20 +90,29 @@ class booru:
           i = randint(0, mn-1)
           onebooru = filtered[i]
 
-          # Set variables for embed
-          owner = onebooru.get('owner')
-          if not owner:
-             owner = onebooru.get('author', '')
-          onebooru_author = owner
+          # Set variables for owner/author of post
+          onebooru_author = onebooru.get('owner') or onebooru.get('author') or onebooru.get('uploader_name') or ''
+
+          # Set variables for tags
+          onebooru_tags = onebooru.get('tags') or onebooru.get('tag_string') or ''
+
+          # Set variables for score
+          onebooru_score = onebooru.get('score') or 'N/A'
+
+          # Set variables for file url
+          file_url = onebooru.get('file_url')
+          if onebooru['provider'] == "Danbooru":
+             file_url = "https://danbooru.donmai.us" + onebooru.get('file_url')
+          onebooru_url = file_url
 
           # Build Embed
           embed = discord.Embed()
           embed.title = onebooru['provider'] + " entry by " + onebooru_author
-          embed.url = onebooru['file_url']
-          embed.set_image(url=onebooru['file_url'])
-          embed.add_field(name="Tags", value=onebooru['tags'], inline=False)
+          embed.url = onebooru_url
+          embed.set_image(url=onebooru_url)
+          embed.add_field(name="Tags", value=onebooru_tags, inline=False)
           embed.add_field(name="Rating", value=onebooru['rating'])
-          embed.add_field(name="Score", value=onebooru['score'])
+          embed.add_field(name="Score", value=onebooru_score)
           embed.set_footer(text="If image doesn't appear, it may be a webm or too big, Powered by {}".format(onebooru['provider']))
           await self.bot.say(embed=embed)
 

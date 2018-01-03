@@ -1,0 +1,9 @@
+{
+    "AUTHOR" : "Otazoku",
+    "INSTALL_MSG" : "Installing urbandictionary cog",
+    "NAME" : "urbandictionary",
+    "SHORT" : "Display random urban dictionary entries",
+    "DESCRIPTION" : "Displays random urban dictionary entries such as description, example for any word",
+    "TAGS" : ["urbandictionary", "info", "dictionary"],
+    "HIDDEN" : false
+}

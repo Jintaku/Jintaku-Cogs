@@ -1,0 +1,10 @@
+{
+    "AUTHOR" : "Otazoku",
+    "INSTALL_MSG" : "Installing user information",
+    "NAME" : "userinfomod",
+    "SHORT" : "Display user information in image format",
+    "DESCRIPTION" : "Displays user's information such as days since arrival and member number in image format",
+    "REQUIREMENTS": ["Pillow"],
+    "TAGS" : ["user", "info", "image", "picture"],
+    "HIDDEN" : false
+}

@@ -1,0 +1,9 @@
+{
+    "AUTHOR" : "Otazoku",
+    "INSTALL_MSG" : "Installing giphy cog",
+    "NAME" : "giphy",
+    "SHORT" : "Display gifs",
+    "DESCRIPTION" : "Displays a random gif based on your query",
+    "TAGS" : ["giphy", "gif"],
+    "HIDDEN" : false
+}

@@ -1,0 +1,9 @@
+{
+    "AUTHOR" : "Otazoku",
+    "INSTALL_MSG" : "Installing xkcd cog",
+    "NAME" : "xkcd",
+    "SHORT" : "Display random xkcd",
+    "DESCRIPTION" : "Displays xkcd entries such as description, title and image/comic from xkcd",
+    "TAGS" : ["xkcd", "comic", "jokes"],
+    "HIDDEN" : false
+}

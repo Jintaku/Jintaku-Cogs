@@ -1,0 +1,9 @@
+{
+    "AUTHOR" : "Otazoku",
+    "INSTALL_MSG" : "Installing wikia cog",
+    "NAME" : "wikia",
+    "SHORT" : "Display wikia information",
+    "DESCRIPTION" : "Displays wikia entries such as description, title and thumbnail from any wikia site",
+    "TAGS" : ["wikia", "info", "wiki"],
+    "HIDDEN" : false
+}

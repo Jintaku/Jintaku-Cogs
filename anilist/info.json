@@ -1,0 +1,9 @@
+{
+    "AUTHOR" : "Otazoku",
+    "INSTALL_MSG" : "Installing anilist cog",
+    "NAME" : "anilist",
+    "SHORT" : "A cog to search the anilist API",
+    "DESCRIPTION" : "You can search anime, manga, users and characters!",
+    "TAGS" : ["anime", "manga", "anilist", "list"],
+    "HIDDEN" : false
+}

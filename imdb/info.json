@@ -1,0 +1,9 @@
+{
+    "AUTHOR" : "Otazoku",
+    "INSTALL_MSG" : "Installing imdb cog",
+    "NAME" : "imdb",
+    "SHORT" : "Display movie information",
+    "DESCRIPTION" : "Displays movie's information such as description, title, date released, score, box office, etc.",
+    "TAGS" : ["imdb", "info", "embed", "movies"],
+    "HIDDEN" : false
+}

@@ -17,7 +17,7 @@ class booru:
         self.filter_list = dataIO.load_json(self.file_path)
 
     @commands.command(pass_context=True)
-    async def booru(self, ctx, rating, tag):
+    async def booru(self, ctx, rating, *, tag):
         """Shows a image board entry \n \n Ratings are : \n n: not filtered by rating \n e: explicit \n q: questionnable \n s: safe"""
 
         # Input handler and rating handler
@@ -25,7 +25,7 @@ class booru:
         global_filters = ["{}".format(self.filter_list['filter_list'])]
         tags = tag.split(" ")
         if global_filters != "":
-           tags += global_filters
+           tags = global_filters + tags
 
            # Image board fetcher
            yan = self.fetch_yan(ctx, tags)
@@ -45,8 +45,11 @@ class booru:
     async def fetch_from_booru(self, urlstr, provider): # Handles provider data and fetcher responses
        content = ""
        async with aiohttp.get(urlstr) as url:
-           content = await url.json()
-       if not content:
+           try:
+               content = await url.json()
+           except ValueError:
+               content = None
+       if not content or (type(content) is dict and 'success' in content.keys() and content['success'] == False):
            return []
        else:
          for item in content:
@@ -66,7 +69,7 @@ class booru:
         self.kon_data = await self.fetch_from_booru(urlstr, "Konachan")
 
     async def fetch_dan(self, ctx, tags): # Danbooru fetcher
-        urlstr = "https://danbooru.donmai.us/posts.json?limit=100&tags=" + "+".join(tags)
+        urlstr = "https://danbooru.donmai.us/posts.json?limit=100&tags=" + "+".join(tags[:2])
         self.dan_data = await self.fetch_from_booru(urlstr, "Danbooru")
 
     async def booru_rating(self, ctx, data): # Filters results based on rating input

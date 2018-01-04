@@ -8,7 +8,7 @@ import requests
 import datetime
 
 
-class Anilist:
+class AnilistSearch:
 
     def __init__(self, bot):
         self.bot = bot
@@ -405,4 +405,4 @@ query ($id: Int, $page: Int, $search: String) {
         await self.bot.say(embed=embed)
 
 def setup(bot):
-    bot.add_cog(Anilist(bot))
+    bot.add_cog(AnilistSearch(bot))

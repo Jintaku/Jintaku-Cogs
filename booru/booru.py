@@ -1,12 +1,11 @@
 import discord
 from discord.ext import commands
-import urllib.request
-import json
 import aiohttp
 from random import randint
 from .utils.dataIO import dataIO
 from cogs.utils import checks
 import os
+import threading
 
 class booru:
     """Show a picture using image boards (Gelbooru, yandere, konachan)"""
@@ -28,14 +27,14 @@ class booru:
            tags = global_filters + tags
 
            # Image board fetcher
-           yan = self.fetch_yan(ctx, tags)
-           gel = self.fetch_gel(ctx, tags)
-           kon = self.fetch_kon(ctx, tags)
-           dan = self.fetch_dan(ctx, tags)
-           await yan
-           await gel
-           await kon
-           await dan
+           yan = threading.Thread(target=await self.fetch_yan(ctx, tags))
+           gel = threading.Thread(target=await self.fetch_gel(ctx, tags))
+           kon = threading.Thread(target=await self.fetch_kon(ctx, tags))
+           dan = threading.Thread(target=await self.fetch_dan(ctx, tags))
+           yan.join()
+           gel.join()
+           kon.join()
+           dan.join()
 
            # Fuse multiple image board data
            data = self.yan_data + self.gel_data + self.kon_data + self.dan_data

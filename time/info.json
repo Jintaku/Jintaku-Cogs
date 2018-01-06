@@ -1,0 +1,9 @@
+{
+    "AUTHOR" : "Otazoku",
+    "INSTALL_MSG" : "Installing time cog",
+    "NAME" : "time",
+    "SHORT" : "Displays time in area queried",
+    "DESCRIPTION" : "Displays time in area queried using timezoneapi.io",
+    "TAGS" : ["time", "timezone", "info"],
+    "HIDDEN" : false
+}

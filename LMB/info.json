@@ -1,0 +1,9 @@
+{
+    "AUTHOR" : "Otazoku",
+    "INSTALL_MSG" : "Installing LastMessageBoard cog",
+    "NAME" : "LMB",
+    "SHORT" : "Displays list of user with the time of their last sent message",
+    "DESCRIPTION" : "Displays list of user with the time of their last sent message (45days old max)",
+    "TAGS" : ["LMB", "info", "user", "list"],
+    "HIDDEN" : false
+}

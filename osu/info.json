@@ -1,0 +1,9 @@
+{
+    "AUTHOR" : "Otazoku",
+    "INSTALL_MSG" : "Installing osu! cog",
+    "NAME" : "osu",
+    "SHORT" : "Display osu user information",
+    "DESCRIPTION" : "Displays osu user information such as rankings, levels and accuracy",
+    "TAGS" : ["osu!", "info"],
+    "HIDDEN" : false
+}

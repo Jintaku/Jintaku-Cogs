@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-import requests
+import aiohttp
 
 class pokemon:
     """Show Pokemon info"""
@@ -13,8 +13,8 @@ class pokemon:
         """Show pokemon info"""
 
         # Queries pokeapi for Name, ID and evolution_chain
-        r1 = requests.get("https://pokeapi.co/api/v2/pokemon-species/" + title.lower())
-        response1 = r1.json()
+        async with aiohttp.get("https://pokeapi.co/api/v2/pokemon-species/" + title.lower()) as r1:
+            response1 = await r1.json()
 
         # Handles response1
         if response1.get('detail') == "Not found.":
@@ -23,12 +23,12 @@ class pokemon:
            evolution_url = response1['evolution_chain']['url']
 
            # Queries pokeapi for Height, Weight, Sprite
-           r2 = requests.get("https://pokeapi.co/api/v2/pokemon/" + title.lower())
-           response2 = r2.json()
+           async with aiohttp.get("https://pokeapi.co/api/v2/pokemon/" + title.lower()) as r2:
+              response2 = await r2.json()
 
            # Queries pokeapi for Evolutions
-           r3 = requests.get(str(evolution_url))
-           response3 = r3.json()
+           async with aiohttp.get(str(evolution_url)) as r3:
+              response3 = await r3.json()
 
            # Selects english description for embed
            description = ""

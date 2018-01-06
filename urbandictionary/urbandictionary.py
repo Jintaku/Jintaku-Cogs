@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-import requests
+import aiohttp
 from random import randint
 
 class urbandictionary:
@@ -16,8 +16,8 @@ class urbandictionary:
         word_entry = word.replace(" ", "+")
 
         # Queries unofficial urbandictionary API
-        response = requests.get("http://api.urbandictionary.com/v0/define?term=" + str(word_entry).lower())
-        ud = response.json()
+        async with aiohttp.get("http://api.urbandictionary.com/v0/define?term=" + str(word_entry).lower()) as response:
+            ud = await response.json()
 
         # Counts results and shows a random entry
         if ud['result_type'] != "exact":

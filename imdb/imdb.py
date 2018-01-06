@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-import requests
+import aiohttp
 from .utils.dataIO import dataIO
 from cogs.utils import checks
 import os
@@ -20,8 +20,8 @@ class Imdb:
         titlesearch = title.replace(' ', '_')
 
         # Query omdb api for movie results
-        response = requests.get("http://www.omdbapi.com/?apikey=" + self.credentials["Apikey"] + "&s=" + titlesearch + "&plot=short")
-        data = response.json()
+        async with aiohttp.get("http://www.omdbapi.com/?apikey=" + self.credentials["Apikey"] + "&s=" + titlesearch + "&plot=short") as response:
+            data = await response.json()
 
         # Handle response based on query result and user input
         if data['Response'] == "False":
@@ -55,8 +55,8 @@ class Imdb:
         """Show a movie"""
 
         # Queries omdb api for movie information
-        response = requests.get("http://www.omdbapi.com/?apikey=" + self.credentials["Apikey"] + "&i=" + imdbID + "&plot=full")
-        data = response.json()
+        async with aiohttp.get("http://www.omdbapi.com/?apikey=" + self.credentials["Apikey"] + "&i=" + imdbID + "&plot=full") as response:
+            data = await response.json()
 
         # Build Embed
         embed = discord.Embed()

@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-import requests
+import aiohttp
 from random import randint
 from .utils.dataIO import dataIO
 from cogs.utils import checks
@@ -19,8 +19,8 @@ class giphy:
         """Shows a gif"""
 
         # Query giphy search API
-        response = requests.get("http://api.giphy.com/v1/gifs/search?api_key=" + self.credentials['Apikey'] + "&q=" + query + "&limit=15")
-        gif = response.json()
+        async with aiohttp.get("http://api.giphy.com/v1/gifs/search?api_key=" + self.credentials['Apikey'] + "&q=" + query + "&limit=15") as response:
+            gif = await response.json()
 
         # Filter results to only show g, pg and pg-13 rated results
         filtered = [item for item in gif['data'] if item['rating'] in ("g", "pg", "pg-13")]

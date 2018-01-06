@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-import requests
+import aiohttp
 from random import randint
 
 class xkcd:
@@ -15,8 +15,8 @@ class xkcd:
 
         # Creates random number between 0 and 1935 (number of xkcd comics at time of writing) and queries xkcd
         i = randint(0, 1935)
-        response = requests.get("https://xkcd.com/" + str(i) + "/info.0.json")
-        xkcd = response.json()
+        async with aiohttp.get("https://xkcd.com/" + str(i) + "/info.0.json") as response:
+            xkcd = await response.json()
 
         # Build Embed
         embed = discord.Embed()

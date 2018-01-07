@@ -13,7 +13,7 @@ Cogs made by the Otazoku community
 ## Booru (Default filter doesn't show NSFW content)
 
 * [p]booru <rating> <tags> - Displays random picture based on your tags and filters using varios image board APIs (Gelbooru, yandere, konachan)
-* [p]boofilters - PMs your filters and lets you change them
+* [p]boorufilters - PMs your filters and lets you change them
 
 ## Giphy (Requires Giphy API key)
 
@@ -47,3 +47,19 @@ Cogs made by the Otazoku community
 ## Urbandictionary
 
 * [p]ud <word> - Displays word entries from urban dictionary
+  
+## LMB (Last Message Board)
+
+* [p]lmb <green_threshold> <grey threshold> - Displays when people last sent their messages and coulours them based on that data
+  
+## DDG (Duckduckgo)
+
+* [p]ddg <query> - Displays duckduckgo instant answers data
+  
+## Time
+
+* [p]time <query> - Queries Timezoneapi.io for time data of queried area
+  
+## Osu
+
+* [p]osu <username> - Displays osu profile information using osu api

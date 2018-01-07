@@ -1,0 +1,9 @@
+{
+    "AUTHOR" : "Otazoku",
+    "INSTALL_MSG" : "Installing duckduckgo cog",
+    "NAME" : "ddg",
+    "SHORT" : "Display ddg instant answers information",
+    "DESCRIPTION" : "Display ddg instant answers information",
+    "TAGS" : ["duckduckgo", "ddg", "instant", "info"],
+    "HIDDEN" : false
+}

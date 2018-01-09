@@ -1,0 +1,9 @@
+{
+    "AUTHOR" : "Otazoku",
+    "INSTALL_MSG" : "Installing IGDB cog",
+    "NAME" : "games",
+    "SHORT" : "Display game information",
+    "DESCRIPTION" : "Displays game's information such as description, title, date released.",
+    "TAGS" : ["idgb", "games", "database", "info", "embed"],
+    "HIDDEN" : false
+}

@@ -47,19 +47,23 @@ Cogs made by the Otazoku community
 ## Urbandictionary
 
 * [p]ud <word> - Displays word entries from urban dictionary
-  
+
 ## LMB (Last Message Board)
 
 * [p]lmb <green_threshold> <grey threshold> - Displays when people last sent their messages and coulours them based on that data
-  
+
 ## DDG (Duckduckgo)
 
 * [p]ddg <query> - Displays duckduckgo instant answers data
-  
+
 ## Time
 
 * [p]time <query> - Queries Timezoneapi.io for time data of queried area
-  
+
 ## Osu
 
 * [p]osu <username> - Displays osu profile information using osu api
+
+## Games
+
+* [p]game <game> - Displays game information using IGDB

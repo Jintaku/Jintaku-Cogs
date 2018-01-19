@@ -73,7 +73,8 @@ class booru:
 
     async def fetch_dan(self, ctx, tags): # Danbooru fetcher
         urlstr = "https://danbooru.donmai.us/posts.json?limit=100&tags=" + "+".join(tags[:2])
-        self.dan_data = await self.fetch_from_booru(urlstr, "Danbooru")
+        dan_data = await self.fetch_from_booru(urlstr, "Danbooru")
+        self.dan_data = [dan_entry for dan_entry in dan_data if not dan_entry.get('is_deleted', False)]
 
     async def booru_rating(self, ctx, data): # Filters results based on rating input
            if self.rating in ("e", "s", "q"):
@@ -108,7 +109,7 @@ class booru:
           # Set variables for file url
           file_url = onebooru.get('file_url')
           if onebooru['provider'] == "Danbooru":
-             file_url = "https://danbooru.donmai.us" + onebooru.get('file_url')
+             file_url = "https://danbooru.donmai.us" + onebooru.get('file_url', '')
           onebooru_url = file_url
 
           # Build Embed
@@ -116,7 +117,7 @@ class booru:
           embed.title = onebooru['provider'] + " entry by " + onebooru_author
           embed.url = onebooru_url
           embed.set_image(url=onebooru_url)
-          embed.add_field(name="Tags", value=onebooru_tags, inline=False)
+          embed.add_field(name="Tags", value=onebooru_tags[:300], inline=False)
           embed.add_field(name="Rating", value=onebooru['rating'])
           embed.add_field(name="Score", value=onebooru_score)
           embed.set_footer(text="If image doesn't appear, it may be a webm or too big, Powered by {}".format(onebooru['provider']))

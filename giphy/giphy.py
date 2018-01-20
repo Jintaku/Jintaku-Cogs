@@ -16,10 +16,20 @@ class giphy:
 
     @commands.command(pass_context=True)
     async def gif(self, ctx, *, query):
-        """Shows a gif"""
+        """Shows a gif \n \n Put a number before your query to decide how much gifs you want to query (Defaults to 15)"""
+
+        words = query.split(" ")
+
+        if words[0].isdigit() == True:
+            limit = words[0]
+            if int(limit) > 100:
+                limit = "100"
+            query = " ".join(words[1:])
+        else:
+            limit = "15"
 
         # Query giphy search API
-        async with aiohttp.get("http://api.giphy.com/v1/gifs/search?api_key=" + self.credentials['Apikey'] + "&q=" + query + "&limit=15") as response:
+        async with aiohttp.get("http://api.giphy.com/v1/gifs/search?api_key=" + self.credentials['Apikey'] + "&q=" + query.replace(" ", "+") + "&limit=" + limit) as response:
             gif = await response.json()
 
         # Filter results to only show g, pg and pg-13 rated results

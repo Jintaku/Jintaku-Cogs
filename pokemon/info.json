@@ -2,7 +2,7 @@
     "AUTHOR" : "Otazoku",
     "INSTALL_MSG" : "Installing pokemon cog",
     "NAME" : "pokemon",
-    "SHORT" : "Display movie information",
+    "SHORT" : "Display pokemon information",
     "DESCRIPTION" : "Displays pokemon's information such as description, title, weight, height and evolution chain",
     "TAGS" : ["pokemon", "info", "embed", "pokeapi"],
     "HIDDEN" : false

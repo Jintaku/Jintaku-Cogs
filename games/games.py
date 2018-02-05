@@ -1,85 +1,143 @@
+from urllib.parse import quote
 import discord
 from discord.ext import commands
 import aiohttp
 from .utils.dataIO import dataIO
+from datetime import datetime
 from cogs.utils import checks
 import os
-from datetime import datetime
+
+
+numbs = {
+    "next": "➡",
+    "back": "⬅",
+    "exit": "❌"
+}
+
 
 class games:
-    """Show stuff using games!"""
+    """Search games using IGDB"""
 
     def __init__(self, bot):
         self.bot = bot
         self.file_path = "data/games/credentials.json"
         self.credentials = dataIO.load_json(self.file_path)
 
+    async def _search_games(self, ctx, url):
+        # future response dict
+        data = None
+
+        try:
+            headers = {'user-key': self.credentials['Apikey'], 'Accept': 'application/json'}
+            async with aiohttp.get(url, headers=headers) as response:
+                data = await response.json()
+
+        except:
+            return None
+
+        if data is not None and len(data) > 0:
+
+            # a list of embeds
+            embeds = []
+
+            for games in data:
+                release_date = games.get('first_release_date')
+                if release_date:
+                    release_date = datetime.fromtimestamp(release_date / 1000).strftime("%Y")
+                else:
+                    release_date = "N/A"
+                if 'cover' in games.keys() and games['cover']['url']:
+                   url = games['cover']['url']
+                   if "http" not in url:
+                      url = "https:" + url
+                embed = discord.Embed(title="{} {}".format(games['name'], release_date),
+                                      url=games['url'],
+                                      description=games.get('summary', 'N/A')[:300] + "...")
+                embed.set_thumbnail(url=url)
+                embed.set_footer(text="Powered by IGDB")
+                embeds.append(embed)
+
+            return embeds, data
+
+        else:
+            return None
+
     @commands.command(pass_context=True)
     async def game(self, ctx, *, query):
-        """Shows a games user!"""
+        """Searches for game information using IGDB"""
 
-        # Query IGDB API
-        headers = {'user-key': self.credentials['Apikey'], 'Accept': 'application/json'}
-        async with aiohttp.ClientSession() as session:
-           async with session.get("https://api-2445582011268.apicast.io" + "/games/?search=" + query.replace(" ", "+") + "&fields=*", headers=headers) as response:
-              games = await response.json()
+        try:
+            # URL for IGDB api
+            url = "https://api-2445582011268.apicast.io/games/?search=" + query.replace(" ", "+") + "&fields=*"
 
-        if games:
-            totalResults = len(games)
-            if totalResults == 1:
-                entry = medias[0]
-                await self.show_game(entry)
-            elif totalResults > 1:
-                medias = games
-                msg = "**Please choose one by giving its number.**\n"
-                for i in range(0, len(medias)):
-                    release_date = medias[i].get('first_release_date')
-                    if release_date:
-                        release_date = datetime.fromtimestamp(release_date / 1000).strftime("%Y")
-                    else:
-                        release_date = "N/A"
-                    msg += "\n{number} - {title} - {year}".format(number=i+1, title=medias[i]['name'], year=release_date)
+            embeds, data = await self._search_games(ctx, url)
 
-                message = await self.bot.say(msg)
+            if embeds is not None:
+                await self.game_menu(ctx, embeds, message=None, page=0, timeout=30, edata=data)
+            else:
+                await self.bot.say('No games were found or there was an error in the process')
 
-                check = lambda m: m.content.isdigit() and int(m.content) in range(1, len(medias) + 1)
-                resp = await self.bot.wait_for_message(timeout=15, author=ctx.message.author,
-                                                       check=check)
+        except TypeError:
+            await self.bot.say('No games were found or there was an error in the process')
 
-                # Delete messages to not pollute the chat
-                await self.bot.delete_message(message)
-                if resp:
-                    await self.bot.delete_message(resp)
-                else:
-                    return
+    async def game_menu(self, ctx, cog_list: list,
+                        message: discord.Message=None,
+                        page=0, timeout: int=30, edata=None):
+        """menu control logic for this taken from
+           https://github.com/Lunar-Dust/Dusty-Cogs/blob/master/menu/menu.py"""
+        cog = cog_list[page]
 
-                entry = medias[int(resp.content)-1]
-                await self.show_game(entry)
+        expected = ["➡", "⬅", "❌"]
+
+        if not message:
+            message =\
+                await self.bot.send_message(ctx.message.channel, embed=cog)
+            await self.bot.add_reaction(message, "⬅")
+            await self.bot.add_reaction(message, "❌")
+            await self.bot.add_reaction(message, "➡")
         else:
-           await self.bot.say("No results.")
+            message = await self.bot.edit_message(message, embed=cog)
+        react = await self.bot.wait_for_reaction(
+            message=message, user=ctx.message.author, timeout=timeout,
+            emoji=expected
+        )
+        if react is None:
+            try:
+                try:
+                    await self.bot.clear_reactions(message)
+                except:
+                    await self.bot.remove_reaction(message, "⬅", self.bot.user)
+                    await self.bot.remove_reaction(message, "❌", self.bot.user)
+                    await self.bot.remove_reaction(message, "➡", self.bot.user)
+            except:
+                pass
+            return None
+        reacts = {v: k for k, v in numbs.items()}
+        react = reacts[react.reaction.emoji]
+        if react == "next":
+            page += 1
+            next_page = page % len(cog_list)
+            try:
+                await self.bot.remove_reaction(message, "➡", ctx.message.author)
+            except:
+                pass
+            return await self.game_menu(ctx, cog_list, message=message,
+                                        page=next_page, timeout=timeout, edata=edata)
+        elif react == "back":
+            page -= 1
+            next_page = page % len(cog_list)
+            try:
+                await self.bot.remove_reaction(message, "⬅", ctx.message.author)
+            except:
+                pass
+            return await self.game_menu(ctx, cog_list, message=message,
+                                        page=next_page, timeout=timeout, edata=edata)
 
-    async def show_game(self, entry):
-        # Build Embed
-        embed = discord.Embed()
-        release_date = entry.get('first_release_date')
-        if release_date:
-            release_date = datetime.fromtimestamp(release_date / 1000).strftime("%Y")
         else:
-            release_date = "N/A"
-        embed.title = "{} {}".format(entry['name'], release_date)
-        if entry['url']:
-            embed.url = entry['url']
-        if "summary" in entry.keys() and entry['summary']:
-           embed.description = entry['summary'][:300] + "..."
-        if 'cover' in entry.keys() and entry['cover']['url']:
-           url = entry['cover']['url']
-           if "http" not in url:
-              url = "https:" + url
-           embed.set_thumbnail(url=url)
-        embed.set_footer(text="Powered by IGDB")
-
-        await self.bot.say(embed=embed)
-
+            try:
+                return await self.bot.delete_message(message)
+            except:
+                pass
 
     @commands.command(pass_context=True)
     @checks.is_owner()
@@ -112,6 +170,6 @@ def check_files():
         dataIO.save_json(f, system)
 
 def setup(bot):
-    check_folders()
-    check_files()
-    bot.add_cog(games(bot))
+   check_folders()
+   check_files()
+   bot.add_cog(games(bot))

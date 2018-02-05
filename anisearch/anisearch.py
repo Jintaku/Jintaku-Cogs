@@ -1,39 +1,23 @@
-# Original credit and design goes to mee6 and Redjumpman
-# Modified by Lionirdeadman and Ben (Mostly Ben. He's hella gud)
-import os
-import re
+from urllib.parse import quote
 import discord
 from discord.ext import commands
-import requests
 import datetime
+import re
+import requests
+
+
+numbs = {
+    "next": "➡",
+    "back": "⬅",
+    "exit": "❌"
+}
 
 
 class AniSearch:
+    """Search for anime, manga, characters and users using Anilist"""
 
     def __init__(self, bot):
         self.bot = bot
-
-    @commands.command(pass_context=True, no_pm=True)
-    async def anime(self, ctx, *, title):
-        """Shows AniList information on an anime"""
-        cmd = "ANIME"
-        await self.fetch_info_anime_manga(ctx, cmd, title)
-
-    @commands.command(pass_context=True, no_pm=True)
-    async def manga(self, ctx, *, title):
-        """Shows AniList information on a manga"""
-        cmd = "MANGA"
-        await self.fetch_info_anime_manga(ctx, cmd, title)
-
-    @commands.command(pass_context=True, no_pm=True)
-    async def user(self, ctx, *, username):
-        """Shows AniList information on a user"""
-        await self.fetch_info_user(ctx, username)
-
-    @commands.command(pass_context=True, no_pm=True)
-    async def character(self, ctx, *, name):
-        """Shows AniList information on a character"""
-        await self.fetch_info_character(ctx, name)
 
     def format_name(self, first_name, last_name): # Combines first_name and last_name and/or shows either of the two
       if first_name and last_name:
@@ -74,7 +58,7 @@ class AniSearch:
         else:
             return items
 
-    async def fetch_info_anime_manga(self, ctx, cmd, title): # Gets anime and manga information using Anilist APIv2
+    async def _search_anime_manga(self, ctx, cmd, entered_title):
 
         # Outputs MediaStatuses to strings
         MediaStatusToString = {
@@ -121,80 +105,132 @@ query ($id: Int, $page: Int, $search: String, $type: MediaType) {
 '''
         url = 'https://graphql.anilist.co'
         variables = {
-            'search': title,
+            'search': entered_title,
             'page': 1,
             'type': cmd
         }
 
         response = requests.post(url, json={'query': query, 'variables': variables})
 
-        medias = response.json()['data']['Page']['media']
+        data = response.json()['data']['Page']['media']
 
-        # Counts how many results there is and deals with it based on user input
-        result_count = len(medias)
-        if result_count == 0:
-            return await self.bot.say("I couldn't find anything!")
+        print(data)
+
+        if data is not None and len(data) > 0:
+
+            # a list of embeds
+            embeds = []
+
+            for anime_manga in data:
+                # Sets up various variables for Embed
+                link = 'https://anilist.co/{}/{}'.format(cmd.lower(), anime_manga['id'])
+                description = anime_manga['description']
+                title = anime_manga['title']['english'] or anime_manga['title']['romaji']
+                if anime_manga.get('nextAiringEpisode'):
+                    seconds = anime_manga['nextAiringEpisode']['timeUntilAiring']
+                    time_left = str(datetime.timedelta(seconds=seconds))
+                else:
+                    time_left = "Never"
+
+                external_links = ""
+                for i in range(0, len(anime_manga['externalLinks'])):
+                  ext_link = anime_manga['externalLinks'][i]
+                  external_links += "[{site_name}]({link}), ".format(site_name=ext_link['site'], link=ext_link['url'])
+                  if i+1 == len(anime_manga['externalLinks']):
+                    external_links = external_links[:-2]
+
+                embed = discord.Embed(title=title)
+                embed.url=link
+                embed.description=self.description_parser(description)
+                embed.set_thumbnail(url=anime_manga['coverImage']['medium'])
+                embed.add_field(name="Score", value=anime_manga.get('averageScore', 'N/A'))
+                if cmd == "ANIME":
+                    embed.add_field(name="Episodes", value=anime_manga.get('episodes', 'N/A'))
+                    embed.set_footer(text="Status : "+ MediaStatusToString[anime_manga['status']] + ", Next episode : " + time_left + ", Powered by Anilist")
+                else:
+                    embed.add_field(name="Chapters", value=anime_manga.get('chapters', 'N/A'))
+                    embed.set_footer(text="Status : "+ MediaStatusToString.get(anime_manga.get('status'), 'N/A') + ", Powered by Anilist")
+                if external_links:
+                    embed.add_field(name="Streaming and/or Info sites", value=external_links)
+                embed.add_field(name="You can find out more", value="[Anilist]({anilist_url}), [MAL](https://myanimelist.net/{type}/{id_mal}), Kitsu (Soon™)".format(id_mal=anime_manga['idMal'], anilist_url=link, type=cmd.lower()))
+                embeds.append(embed)
+
+            return embeds, data
+
         else:
-            if result_count == 1:
-                entry = medias[0]
-            else:
-                msg = "**Please choose one by giving its number.**\n"
-                for i in range(0, len(medias)):
-                    msg += "\n{number} - {title_romaji}".format(number=i+1, title_romaji=medias[i]['title']['romaji'])
+            return None
 
-                message = await self.bot.say(msg)
+    async def _search_character(self, ctx, entered_title):
 
-                check = lambda m: m.content.isdigit() and int(m.content) in range(1, len(medias) + 1)
-                resp = await self.bot.wait_for_message(timeout=15, author=ctx.message.author,
-                                                       check=check)
+        #GraphQL query
+        query = '''
+query ($id: Int, $page: Int, $search: String) {
+  Page(page: $page, perPage: 10) {
+    characters(id: $id, search: $search) {
+      id
+      description (asHtml: true),
+      name {
+        first
+        last
+        native
+      }
+      image {
+        large
+      }
+      media {
+        nodes {
+          id
+          type
+          title {
+            romaji
+            english
+            native
+            userPreferred
+          }
+        }
+      }
+    }
+  }
+}
+'''
+        url = 'https://graphql.anilist.co'
+        variables = {
+            'search': entered_title,
+            'page': 1
+        }
 
-                # Deletes messages to not pollute the chat
-                await self.bot.delete_message(message)
-                if resp:
-                   await self.bot.delete_message(resp)
-                if resp is None:
-                    return
+        response = requests.post(url, json={'query': query, 'variables': variables})
 
-                entry = medias[int(resp.content)-1]
+        data = response.json()['data']['Page']['characters']
 
-            # Sets up various variables for Embed
-            link = 'https://anilist.co/{}/{}'.format(cmd.lower(), entry['id'])
-            title = "[{}]({})".format(entry['title']['romaji'], link)
-            description = entry['description']
-            title = entry['title']['romaji']
-            if entry.get('nextAiringEpisode'):
-                seconds = entry['nextAiringEpisode']['timeUntilAiring']
-                time_left = str(datetime.timedelta(seconds=seconds))
-            else:
-                time_left = "Never"
+        if data is not None and len(data) > 0:
 
-            external_links = ""
-            for i in range(0, len(entry['externalLinks'])):
-              ext_link = entry['externalLinks'][i]
-              external_links += "[{site_name}]({link}), ".format(site_name=ext_link['site'], link=ext_link['url'])
-              if i+1 == len(entry['externalLinks']):
-                external_links = external_links[:-2]
+            # a list of embeds
+            embeds = []
 
-            # Build Embed
-            embed = discord.Embed()
-            embed.description = self.description_parser(description)
-            embed.title = title
-            embed.url = link
-            embed.set_thumbnail(url=entry['coverImage']['medium'])
-            embed.add_field(name="Score", value=entry.get('averageScore', 'N/A'))
-            if cmd == "ANIME":
-                embed.add_field(name="Episodes", value=entry.get('episodes', 'N/A'))
-                embed.set_footer(text="Status : "+ MediaStatusToString[entry['status']] + ", Next episode : " + time_left + ", Powered by Anilist")
-            else:
-                embed.add_field(name="Chapters", value=entry.get('chapters', 'N/A'))
-                embed.set_footer(text="Status : "+ MediaStatusToString.get(entry.get('status'), 'N/A') + ", Powered by Anilist")
-            if external_links:
-                embed.add_field(name="Streaming and/or Info sites", value=external_links)
-            embed.add_field(name="You can find out more", value="[Anilist]({anilist_url}), [MAL](https://myanimelist.net/{type}/{id_mal}), Kitsu (Soon™)".format(id_mal=entry['idMal'], anilist_url=link, type=cmd.lower()))
+            for character in data:
+        # Sets up various variables for Embed
+                link = 'https://anilist.co/character/{}'.format(character['id'])
+                character_anime = ["[{}]({})".format(anime["title"]["userPreferred"], "https://anilist.co/anime/" + str(anime["id"])) for anime in character["media"]["nodes"] if anime["type"] == "ANIME"]
+                character_manga = ["[{}]({})".format(manga["title"]["userPreferred"], "https://anilist.co/manga/" + str(manga["id"])) for manga in character["media"]["nodes"] if manga["type"] == "MANGA"]
 
-            await self.bot.say(embed=embed)
+                embed = discord.Embed(title=self.format_name(character['name']['first'], character['name']['last']))
+                embed.url=link
+                embed.description=self.description_parser(character['description'])
+                embed.set_thumbnail(url=character['image']['large'])
+                if len(character_anime) > 0:
+                    embed.add_field(name="Anime", value="\n".join(self.list_maximum(character_anime)))
+                if len(character_manga) > 0:
+                    embed.add_field(name="Manga", value="\n".join(self.list_maximum(character_manga)))
+                embed.set_footer(text="Powered by Anilist")
+                embeds.append(embed)
 
-    async def fetch_info_user(self, ctx, username): # Gets user information using Anilist APIv2
+            return embeds, data
+
+        else:
+            return None
+
+    async def _search_user(self, ctx, entered_title):
 
         #GraphQL query
         query = '''
@@ -252,157 +288,168 @@ query ($id: Int, $page: Int, $search: String) {
 '''
         url = 'https://graphql.anilist.co'
         variables = {
-            'search': username,
+            'search': entered_title,
             'page': 1
         }
 
         response = requests.post(url, json={'query': query, 'variables': variables})
 
-        medias = response.json()['data']['Page']['users']
+        data = response.json()['data']['Page']['users']
 
-        # Counts how many results there is and deals with it based on user input
-        result_count = len(medias)
-        if result_count == 0:
-            return await self.bot.say("I couldn't find anything!")
+        if data is not None and len(data) > 0:
+
+            # a list of embeds
+            embeds = []
+
+            for user in data:
+                # Sets up various variables for Embed
+                link = 'https://anilist.co/user/{}'.format(user['id'])
+                title = "[{}]({})".format(user['name'], link)
+                title = user['name']
+
+                embed = discord.Embed(title=title)
+                embed.url=link
+                embed.description=self.description_parser(user['about'])
+                embed.set_thumbnail(url=user['avatar']['large'])
+                embed.add_field(name="Watched time", value=datetime.timedelta(minutes=int(user['stats']['watchedTime'])))
+                embed.add_field(name="Chapters read", value=user['stats'].get('chaptersRead', 'N/A'))
+                if user["favourites"]["anime"]:
+                    fav_anime = ["[{}]({})".format(anime["title"]["userPreferred"], "https://anilist.co/anime/" + str(anime["id"])) for anime in user["favourites"]["anime"]["nodes"]]
+                    embed.add_field(name="Favourite anime", value="\n".join(self.list_maximum(fav_anime)))
+                if user["favourites"]["manga"]:
+                    fav_manga = ["[{}]({})".format(manga["title"]["userPreferred"], "https://anilist.co/manga/" + str(manga["id"])) for manga in user["favourites"]["manga"]["nodes"]]
+                    embed.add_field(name="Favourite manga", value="\n".join(self.list_maximum(fav_manga)))
+                if user["favourites"]["characters"]:
+                    fav_ch = ["[{}]({})".format(self.format_name(character["name"]["first"], character["name"]["last"]), "https://anilist.co/character/" + str(character["id"])) for character in user["favourites"]["characters"]["nodes"]]
+                    embed.add_field(name="Favourite characters", value="\n".join(self.list_maximum(fav_ch)))
+                embed.set_footer(text="Powered by Anilist")
+                embeds.append(embed)
+
+            return embeds, data
+
         else:
-            if result_count == 1:
-                entry = medias[0]
+            return None
+
+    @commands.command(pass_context=True)
+    async def anime(self, ctx, *, entered_title):
+        """Searches for anime using Anilist"""
+
+        try:
+            cmd = "ANIME"
+            embeds, data = await self._search_anime_manga(ctx, cmd, entered_title)
+
+            if embeds is not None:
+                await self.anilist_menu(ctx, embeds, message=None, page=0, timeout=30, edata=data)
             else:
-                msg = "**Please choose one by giving its number.**\n"
-                for i in range(0, len(medias)):
-                    msg += "\n{number} - {name}".format(number=i+1, name=medias[i]['name'])
+                await self.bot.say('No anime was found or there was an error in the process')
 
-                message = await self.bot.say(msg)
+        except TypeError:
+            await self.bot.say('No anime was found or there was an error in the process')
 
-                check = lambda m: m.content.isdigit() and int(m.content) in range(1, len(medias) + 1)
-                resp = await self.bot.wait_for_message(timeout=15, author=ctx.message.author,
-                                                       check=check)
+    @commands.command(pass_context=True)
+    async def manga(self, ctx, *, entered_title):
+        """Searches for manga using Anilist"""
 
-                # Deletes messages to not pollute the chat
-                await self.bot.delete_message(message)
-                if resp:
-                    await self.bot.delete_message(resp)
-                else:
-                    return
+        try:
+            cmd = "MANGA"
+            embeds, data = await self._search_anime_manga(ctx, cmd, entered_title)
 
-                entry = medias[int(resp.content)-1]
+            if embeds is not None:
+                await self.anilist_menu(ctx, embeds, message=None, page=0, timeout=30, edata=data)
+            else:
+                await self.bot.say('No mangas were found or there was an error in the process')
 
-        # Sets up various variables for Embed
-        link = 'https://anilist.co/user/{}'.format(entry['id'])
-        title = "[{}]({})".format(entry['name'], link)
-        description = self.description_parser(entry['about'])
-        title = entry['name']
+        except TypeError:
+            await self.bot.say('No mangas were found or there was an error in the process')
 
-        # Build Embed
-        embed = discord.Embed()
-        embed.description = description
-        embed.title = title
-        embed.url = link
-        embed.set_thumbnail(url=entry['avatar']['large'])
-        embed.add_field(name="Watched time", value=datetime.timedelta(minutes=int(entry['stats']['watchedTime'])))
-        embed.add_field(name="Chapters read", value=entry['stats'].get('chaptersRead', 'N/A'))
-        if entry["favourites"]["anime"]:
-            fav_anime = ["[{}]({})".format(anime["title"]["userPreferred"], "https://anilist.co/anime/" + str(anime["id"])) for anime in entry["favourites"]["anime"]["nodes"]]
-            embed.add_field(name="Favourite anime", value="\n".join(self.list_maximum(fav_anime)))
-        if entry["favourites"]["manga"]:
-            fav_manga = ["[{}]({})".format(manga["title"]["userPreferred"], "https://anilist.co/manga/" + str(manga["id"])) for manga in entry["favourites"]["manga"]["nodes"]]
-            embed.add_field(name="Favourite manga", value="\n".join(self.list_maximum(fav_manga)))
-        if entry["favourites"]["characters"]:
-            fav_ch = ["[{}]({})".format(self.format_name(character["name"]["first"], character["name"]["last"]), "https://anilist.co/character/" + str(character["id"])) for character in entry["favourites"]["characters"]["nodes"]]
-            embed.add_field(name="Favourite characters", value="\n".join(self.list_maximum(fav_ch)))
-        embed.set_footer(text="Powered by Anilist")
+    @commands.command(pass_context=True)
+    async def character(self, ctx, *, entered_title):
+        """Searches for anime using Anilist"""
 
-        await self.bot.say(embed=embed)
+        try:
+            embeds, data = await self._search_character(ctx, entered_title)
 
-    async def fetch_info_character(self, ctx, name): # Gets character information using Anilist APIv2
+            if embeds is not None:
+                await self.anilist_menu(ctx, embeds, message=None, page=0, timeout=30, edata=data)
+            else:
+                await self.bot.say('No characters were found or there was an error in the process')
 
-        #GraphQL query
-        query = '''
-query ($id: Int, $page: Int, $search: String) {
-  Page(page: $page, perPage: 10) {
-    characters(id: $id, search: $search) {
-      id
-      description (asHtml: true),
-      name {
-        first
-        last
-        native
-      }
-      image {
-        large
-      }
-      media {
-        nodes {
-          id
-          type
-          title {
-            romaji
-            english
-            native
-            userPreferred
-          }
-        }
-      }
-    }
-  }
-}
-'''
-        url = 'https://graphql.anilist.co'
-        variables = {
-            'search': name,
-            'page': 1
-        }
+        except TypeError:
+            await self.bot.say('No characters were found or there was an error in the process')
 
-        response = requests.post(url, json={'query': query, 'variables': variables})
+    @commands.command(pass_context=True)
+    async def user(self, ctx, *, entered_title):
+        """Searches users using Anilist"""
 
-        medias = response.json()['data']['Page']['characters']
+        try:
+            embeds, data = await self._search_user(ctx, entered_title)
 
-        # Counts how many results there is and deals with it based on user input
-        result_count = len(medias)
-        if result_count == 0:
-            return await self.bot.say("I couldn't find anything!")
+            if embeds is not None:
+                await self.anilist_menu(ctx, embeds, message=None, page=0, timeout=30, edata=data)
+            else:
+                await self.bot.say('No users were found or there was an error in the process')
+
+        except TypeError:
+            await self.bot.say('No users were found or there was an error in the process')
+
+    async def anilist_menu(self, ctx, cog_list: list,
+                        message: discord.Message=None,
+                        page=0, timeout: int=30, edata=None):
+        """menu control logic for this taken from
+           https://github.com/Lunar-Dust/Dusty-Cogs/blob/master/menu/menu.py"""
+        cog = cog_list[page]
+
+        expected = ["➡", "⬅", "❌"]
+
+        if not message:
+            message =\
+                await self.bot.send_message(ctx.message.channel, embed=cog)
+            await self.bot.add_reaction(message, "⬅")
+            await self.bot.add_reaction(message, "❌")
+            await self.bot.add_reaction(message, "➡")
         else:
-            if result_count == 1:
-                entry = medias[0]
-            else:
-                msg = "**Please choose one by giving its number.**\n"
-                for i in range(0, len(medias)):
-                    msg += "\n{number} - {name}".format(number=i+1, name=self.format_name(medias[i]['name']['first'], medias[i]['name']['last']))
+            message = await self.bot.edit_message(message, embed=cog)
+        react = await self.bot.wait_for_reaction(
+            message=message, user=ctx.message.author, timeout=timeout,
+            emoji=expected
+        )
+        if react is None:
+            try:
+                try:
+                    await self.bot.clear_reactions(message)
+                except:
+                    await self.bot.remove_reaction(message, "⬅", self.bot.user)
+                    await self.bot.remove_reaction(message, "❌", self.bot.user)
+                    await self.bot.remove_reaction(message, "➡", self.bot.user)
+            except:
+                pass
+            return None
+        reacts = {v: k for k, v in numbs.items()}
+        react = reacts[react.reaction.emoji]
+        if react == "next":
+            page += 1
+            next_page = page % len(cog_list)
+            try:
+                await self.bot.remove_reaction(message, "➡", ctx.message.author)
+            except:
+                pass
+            return await self.anilist_menu(ctx, cog_list, message=message,
+                                        page=next_page, timeout=timeout, edata=edata)
+        elif react == "back":
+            page -= 1
+            next_page = page % len(cog_list)
+            try:
+                await self.bot.remove_reaction(message, "⬅", ctx.message.author)
+            except:
+                pass
+            return await self.anilist_menu(ctx, cog_list, message=message,
+                                        page=next_page, timeout=timeout, edata=edata)
 
-                message = await self.bot.say(msg)
-
-                check = lambda m: m.content.isdigit() and int(m.content) in range(1, len(medias) + 1)
-                resp = await self.bot.wait_for_message(timeout=15, author=ctx.message.author,
-                                                       check=check)
-
-                # Deletes messages to not pollute the chat
-                await self.bot.delete_message(message)
-                if resp:
-                    await self.bot.delete_message(resp)
-                else:
-                    return
-
-                entry = medias[int(resp.content)-1]
-
-        # Sets up various variables for Embed
-        link = 'https://anilist.co/character/{}'.format(entry['id'])
-        character_anime = ["[{}]({})".format(anime["title"]["userPreferred"], "https://anilist.co/anime/" + str(anime["id"])) for anime in entry["media"]["nodes"] if anime["type"] == "ANIME"]
-        character_manga = ["[{}]({})".format(manga["title"]["userPreferred"], "https://anilist.co/manga/" + str(manga["id"])) for manga in entry["media"]["nodes"] if manga["type"] == "MANGA"]
-        description = self.description_parser(entry['description'])
-
-        # Build Embed
-        embed = discord.Embed()
-        embed.title = self.format_name(entry['name']['first'], entry['name']['last'])
-        embed.description = description
-        embed.url = link
-        embed.set_thumbnail(url=entry['image']['large'])
-        if len(character_anime) > 0:
-            embed.add_field(name="Anime", value="\n".join(self.list_maximum(character_anime)))
-        if len(character_manga) > 0:
-            embed.add_field(name="Manga", value="\n".join(self.list_maximum(character_manga)))
-        embed.set_footer(text="Powered by Anilist")
-
-        await self.bot.say(embed=embed)
+        else:
+            try:
+                return await self.bot.delete_message(message)
+            except:
+                pass
 
 def setup(bot):
-    bot.add_cog(AniSearch(bot))
+   bot.add_cog(AniSearch(bot))

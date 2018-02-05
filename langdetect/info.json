@@ -1,0 +1,10 @@
+{
+    "AUTHOR" : "Otazoku",
+    "INSTALL_MSG" : "Installing langdetect cog",
+    "NAME" : "langdetect",
+    "SHORT" : "Scans messages and guesses if the content is french or english",
+    "DESCRIPTION" : "Scans channel messages and tries to guess if it's french or english using the langdetect library and tells you how many are french and how many are english",
+    "TAGS" : ["langdetect", "language", "detection"],
+    "REQUIREMENTS" : ["langdetect"],
+    "HIDDEN" : false
+}

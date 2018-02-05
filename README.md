@@ -67,3 +67,11 @@ Cogs made by the Otazoku community
 ## Games
 
 * [p]game <game> - Displays game information using IGDB
+
+## Conrecord
+
+* [p]conrecord <channelid> <days old> - Simply record a channel's messages in a file
+
+## Langdetect
+
+* [p]langdetect <channelid> <days old> - Displays how much messages are French vs English

@@ -1,0 +1,9 @@
+{
+    "AUTHOR" : "Otazoku",
+    "INSTALL_MSG" : "Installing conrecord cog",
+    "NAME" : "conrecord",
+    "SHORT" : "Saves channel messages to a text file",
+    "DESCRIPTION" : "Saves channel messages to a text file named after the day it was made",
+    "TAGS" : ["conrecord", "conversation", "recorder", "logger"],
+    "HIDDEN" : false
+}

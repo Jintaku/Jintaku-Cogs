@@ -54,7 +54,7 @@ class urbandictionary:
 
             embeds, data = await self._search_ud(ctx, url)
 
-            if embeds is not None:
+            if embeds is not None and len(embeds) > 0:
                 await self.ud_menu(ctx, embeds, message=None, page=0, timeout=30, edata=data)
             else:
                 await self.bot.say('No Urban dictionary were found or there was an error in the process')

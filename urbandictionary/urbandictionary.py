@@ -31,7 +31,6 @@ class urbandictionary:
 
             # a list of embeds
             embeds = []
-            print(data)
             for ud in data['list']:
                 embed = discord.Embed()
                 embed.title = ud['word'].capitalize() + " by " + ud['author']
@@ -56,14 +55,14 @@ class urbandictionary:
             embeds, data = await self._search_ud(ctx, url)
 
             if embeds is not None:
-                await self.game_menu(ctx, embeds, message=None, page=0, timeout=30, edata=data)
+                await self.ud_menu(ctx, embeds, message=None, page=0, timeout=30, edata=data)
             else:
                 await self.bot.say('No Urban dictionary were found or there was an error in the process')
 
         except TypeError:
             await self.bot.say('No Urban dictionary were found or there was an error in the process')
 
-    async def game_menu(self, ctx, cog_list: list,
+    async def ud_menu(self, ctx, cog_list: list,
                         message: discord.Message=None,
                         page=0, timeout: int=30, edata=None):
         """menu control logic for this taken from
@@ -104,7 +103,7 @@ class urbandictionary:
                 await self.bot.remove_reaction(message, "➡", ctx.message.author)
             except:
                 pass
-            return await self.game_menu(ctx, cog_list, message=message,
+            return await self.ud_menu(ctx, cog_list, message=message,
                                         page=next_page, timeout=timeout, edata=edata)
         elif react == "back":
             page -= 1
@@ -113,7 +112,7 @@ class urbandictionary:
                 await self.bot.remove_reaction(message, "⬅", ctx.message.author)
             except:
                 pass
-            return await self.game_menu(ctx, cog_list, message=message,
+            return await self.ud_menu(ctx, cog_list, message=message,
                                         page=next_page, timeout=timeout, edata=edata)
 
         else:

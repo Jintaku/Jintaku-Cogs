@@ -1,5 +1,5 @@
-# Otazoku-Cogs
-Cogs made by the Otazoku community
+# Jintaku-Cogs
+Cogs made by the Jintaku community
 
 # Cog list
 

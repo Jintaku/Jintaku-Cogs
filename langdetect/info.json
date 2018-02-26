@@ -1,5 +1,5 @@
 {
-    "AUTHOR" : "Otazoku",
+    "AUTHOR" : "Jintaku",
     "INSTALL_MSG" : "Installing langdetect cog",
     "NAME" : "langdetect",
     "SHORT" : "Scans messages and guesses if the content is french or english",

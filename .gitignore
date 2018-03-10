@@ -1,0 +1,3 @@
+# ignore PyCharm specific files/folders
+
+.idea/

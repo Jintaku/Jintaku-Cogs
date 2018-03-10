@@ -254,9 +254,7 @@ class AniSearch:
                                                                                 'N/A') + ", Powered by Anilist")
                 if external_links:
                     embed.add_field(name="Streaming and/or Info sites", value=external_links)
-                embed.add_field(name="You can find out more",
-                                value="[Anilist]({anilist_url}), [MAL](https://myanimelist.net/{type}/{id_mal}), Kitsu (Soon™)".format(
-                                    id_mal=anime_manga['idMal'], anilist_url=link, type=cmd.lower()))
+                embed.add_field(name="You can find out more", value="[Anilist]({anilist_url}), [MAL](https://myanimelist.net/{type}/{id_mal}), Kitsu (Soon™)".format(id_mal=anime_manga['idMal'], anilist_url=link, type=cmd.lower()))
                 embeds.append(embed)
 
             return embeds, data
@@ -281,13 +279,8 @@ class AniSearch:
             for character in data:
                 # Sets up various variables for Embed
                 link = 'https://anilist.co/character/{}'.format(character['id'])
-                character_anime = [
-                    "[{}]({})".format(anime["title"]["userPreferred"], "https://anilist.co/anime/" + str(anime["id"]))
-                    for anime in character["media"]["nodes"] if anime["type"] == "ANIME"]
-                character_manga = [
-                    "[{}]({})".format(manga["title"]["userPreferred"], "https://anilist.co/manga/" + str(manga["id"]))
-                    for manga in character["media"]["nodes"] if manga["type"] == "MANGA"]
-
+                character_anime = ["[{}]({})".format(anime["title"]["userPreferred"], "https://anilist.co/anime/" + str(anime["id"])) for anime in character["media"]["nodes"] if anime["type"] == "ANIME"]
+                character_manga = ["[{}]({})".format(manga["title"]["userPreferred"], "https://anilist.co/manga/" + str(manga["id"])) for manga in character["media"]["nodes"] if manga["type"] == "MANGA"]
                 embed = discord.Embed(title=self.format_name(character['name']['first'], character['name']['last']))
                 embed.url = link
                 embed.description = self.description_parser(character['description'])
@@ -328,23 +321,16 @@ class AniSearch:
                 embed.url = link
                 embed.description = self.description_parser(user['about'])
                 embed.set_thumbnail(url=user['avatar']['large'])
-                embed.add_field(name="Watched time",
-                                value=datetime.timedelta(minutes=int(user['stats']['watchedTime'])))
+                embed.add_field(name="Watched time", value=datetime.timedelta(minutes=int(user['stats']['watchedTime'])))
                 embed.add_field(name="Chapters read", value=user['stats'].get('chaptersRead', 'N/A'))
-                if user["favourites"]["anime"]:
-                    fav_anime = ["[{}]({})".format(anime["title"]["userPreferred"],
-                                                   "https://anilist.co/anime/" + str(anime["id"])) for anime in
-                                 user["favourites"]["anime"]["nodes"]]
+                if user["favourites"]["anime"]['nodes']:
+                    fav_anime = ["[{}]({})".format(anime["title"]["userPreferred"], "https://anilist.co/anime/" + str(anime["id"])) for anime in user["favourites"]["anime"]["nodes"]]
                     embed.add_field(name="Favourite anime", value="\n".join(self.list_maximum(fav_anime)))
-                if user["favourites"]["manga"]:
-                    fav_manga = ["[{}]({})".format(manga["title"]["userPreferred"],
-                                                   "https://anilist.co/manga/" + str(manga["id"])) for manga in
-                                 user["favourites"]["manga"]["nodes"]]
+                if user["favourites"]["manga"]['nodes']:
+                    fav_manga = ["[{}]({})".format(manga["title"]["userPreferred"], "https://anilist.co/manga/" + str(manga["id"])) for manga in user["favourites"]["manga"]["nodes"]]
                     embed.add_field(name="Favourite manga", value="\n".join(self.list_maximum(fav_manga)))
-                if user["favourites"]["characters"]:
-                    fav_ch = ["[{}]({})".format(self.format_name(character["name"]["first"], character["name"]["last"]),
-                                                "https://anilist.co/character/" + str(character["id"])) for character in
-                              user["favourites"]["characters"]["nodes"]]
+                if user["favourites"]["characters"]['nodes']:
+                    fav_ch = ["[{}]({})".format(self.format_name(character["name"]["first"], character["name"]["last"]), "https://anilist.co/character/" + str(character["id"])) for character in user["favourites"]["characters"]["nodes"]]
                     embed.add_field(name="Favourite characters", value="\n".join(self.list_maximum(fav_ch)))
                 embed.set_footer(text="Powered by Anilist")
                 embeds.append(embed)
@@ -416,11 +402,9 @@ class AniSearch:
         except TypeError:
             await self.bot.say('No users were found or there was an error in the process')
 
-    async def anilist_menu(self, ctx, cog_list: list,
-                           message: discord.Message = None,
-                           page=0, timeout: int = 30, edata=None):
-        """menu control logic for this taken from
-           https://github.com/Lunar-Dust/Dusty-Cogs/blob/master/menu/menu.py"""
+    async def anilist_menu(self, ctx, cog_list: list, message: discord.Message = None, page=0, timeout: int = 30, edata=None):
+        """menu control logic for this taken from https://github.com/Lunar-Dust/Dusty-Cogs/blob/master/menu/menu.py"""
+
         cog = cog_list[page]
 
         expected = ["➡", "⬅", "❌"]
@@ -457,8 +441,7 @@ class AniSearch:
                 await self.bot.remove_reaction(message, "➡", ctx.message.author)
             except:
                 pass
-            return await self.anilist_menu(ctx, cog_list, message=message,
-                                           page=next_page, timeout=timeout, edata=edata)
+            return await self.anilist_menu(ctx, cog_list, message=message, page=next_page, timeout=timeout, edata=edata)
         elif react == "back":
             page -= 1
             next_page = page % len(cog_list)
@@ -466,9 +449,7 @@ class AniSearch:
                 await self.bot.remove_reaction(message, "⬅", ctx.message.author)
             except:
                 pass
-            return await self.anilist_menu(ctx, cog_list, message=message,
-                                           page=next_page, timeout=timeout, edata=edata)
-
+            return await self.anilist_menu(ctx, cog_list, message=message, page=next_page, timeout=timeout, edata=edata)
         else:
             try:
                 return await self.bot.delete_message(message)

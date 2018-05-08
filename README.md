@@ -1,3 +1,6 @@
+# UNMAINTAINED
+This repository will be left unmaintained in favour of [Jintaku-Cogs-V3](https://github.com/Jintaku/Jintaku-Cogs-V3) because of RedBot-V3 inching ever closer to reality.
+
 # Jintaku-Cogs
 Cogs made by the Jintaku community
 
